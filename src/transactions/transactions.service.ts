@@ -3,12 +3,17 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Transaction } from '@prisma/client';
+import { CreatePayableDto } from 'src/payables/dto/create-payable.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class TransactionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
-  create(createTransactionDto: CreateTransactionDto) {
+  async create(createTransactionDto: CreateTransactionDto): Promise<void> {
     const {
       amount,
       description,
@@ -19,17 +24,28 @@ export class TransactionsService {
       cardCvv,
     } = createTransactionDto;
 
-    return this.prisma.transaction.create({
+    const cardNumberMasked = cardNumber.slice(-4);
+
+    const transaction = await this.prisma.transaction.create({
       data: {
         amount,
         description,
         paymentMethod,
-        cardNumber,
+        cardNumber: cardNumberMasked,
         cardHolderName,
         cardExpirationDate,
         cardCvv,
       },
     });
+
+    const payableDto: CreatePayableDto = {
+      amount: transaction.amount,
+      paymentMethod: transaction.paymentMethod,
+      transactionDate: transaction.createdAt,
+      transactionId: transaction.id,
+    };
+
+    this.eventEmitter.emit('transaction.created', payableDto);
   }
 
   async findAll(): Promise<Transaction[]> {

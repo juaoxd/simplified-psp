@@ -6,30 +6,30 @@ import {
   Patch,
   Param,
   Delete,
-  Res,
   HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { Response } from 'express';
+import { Transaction } from '@prisma/client';
 
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
   @Post()
-  create(
-    @Body() createTransactionDto: CreateTransactionDto,
-    @Res() res: Response,
-  ) {
-    this.transactionsService.create(createTransactionDto);
-    res.status(HttpStatus.CREATED).send();
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() createTransactionDto: CreateTransactionDto) {
+    await this.transactionsService.create(createTransactionDto);
+
+    return;
   }
 
   @Get()
-  findAll() {
-    return this.transactionsService.findAll();
+  async findAll(): Promise<Transaction[]> {
+    const transactions = await this.transactionsService.findAll();
+    return transactions;
   }
 
   @Get(':id')

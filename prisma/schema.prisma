@@ -14,16 +14,29 @@ datasource db {
 }
 
 model Transaction {
-  id                 String   @id @default(cuid())
-  amount             Decimal  @db.Decimal(10, 2)
+  id                 String    @id @default(cuid())
+  amount             Decimal   @db.Decimal(10, 2)
   description        String
-  paymentMethod      String   @map("payment_method")
-  cardNumber         String   @map("card_number")
-  cardHolderName     String   @map("card_holder_name")
-  cardExpirationDate String   @map("card_expiration_date")
-  cardCvv            String   @map("card_cvv")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  paymentMethod      String    @map("payment_method")
+  cardNumber         String    @map("card_number")
+  cardHolderName     String    @map("card_holder_name")
+  cardExpirationDate String    @map("card_expiration_date")
+  cardCvv            String    @map("card_cvv")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  Payable            Payable[]
 
   @@map("transactions")
+}
+
+model Payable {
+  id            String      @id @default(cuid())
+  status        String
+  grossAmount   Decimal     @map("gross_amount") @db.Decimal(10, 2)
+  netAmount     Decimal     @map("net_amount") @db.Decimal(10, 2)
+  paymentDate   DateTime    @map("payment_date")
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+
+  @@map("payables")
 }

@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { PayablesService } from './payables.service';
 import { CreatePayableDto } from './dto/create-payable.dto';
 import { UpdatePayableDto } from './dto/update-payable.dto';
@@ -13,8 +21,16 @@ export class PayablesController {
   }
 
   @Get()
-  findAll() {
-    return this.payablesService.findAll();
+  async findAll() {
+    return await this.payablesService.findAll();
+  }
+
+  @Get('totals')
+  async getPayableTotals() {
+    const { totalAvailable, totalWaitingFunds } =
+      await this.payablesService.getPayableTotals();
+
+    return { totalAvailable, totalWaitingFunds };
   }
 
   @Get(':id')

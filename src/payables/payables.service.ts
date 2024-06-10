@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { PayableEntity } from './entities/payable.entity';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Prisma } from '@prisma/client';
+import { PayableTotals } from './interfaces/payables-totals';
 
 @Injectable()
 export class PayablesService {
@@ -25,7 +26,7 @@ export class PayablesService {
       paymentDate.setDate(paymentDate.getDate() + 30);
     }
 
-    const netAmount = new Prisma.Decimal(Number(amount) - Number(amount) * fee);
+    const netAmount = amount.minus(amount.times(fee));
 
     const payable = new PayableEntity(
       status,
@@ -40,8 +41,28 @@ export class PayablesService {
     });
   }
 
-  findAll() {
-    return `This action returns all payables`;
+  async findAll(): Promise<PayableEntity[]> {
+    return await this.prisma.payable.findMany();
+  }
+
+  async getPayableTotals(): Promise<PayableTotals> {
+    const payables = await this.findAll();
+
+    let totalAvailable = new Prisma.Decimal(0);
+    let totalWaitingFunds = new Prisma.Decimal(0);
+
+    payables.forEach((payable) => {
+      if (payable.status === 'paid') {
+        totalAvailable = totalAvailable.plus(payable.netAmount);
+      } else {
+        totalWaitingFunds = totalWaitingFunds.plus(payable.netAmount);
+      }
+    });
+
+    return {
+      totalAvailable,
+      totalWaitingFunds,
+    };
   }
 
   findOne(id: number) {
